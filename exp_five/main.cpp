@@ -57,7 +57,7 @@ public:
   }
   void display() {
     cout << "Page lack time = " << this->page_lack_time
-         << ", Hit rate = " << 1 - this->page_lack_time / 320.0 << endl;
+         << ", Hit rate = " << 1 - this->page_lack_time / 320.0;
   }
   Scheduler() { t.fill(0); }
 };
@@ -112,8 +112,11 @@ class SchedulerOptimal : public Scheduler {
   }
 
 public:
-  SchedulerOptimal(std::vector<int> visit_page_index)
-      : visit_page_index(visit_page_index) {}
+  SchedulerOptimal(std::vector<int> visit_address)
+      : visit_page_index(visit_address) {
+    std::transform(this->visit_page_index.begin(), this->visit_page_index.end(),
+                   this->visit_page_index.begin(), address2page);
+  }
 };
 
 int random_integer_in_range(int a, int b) {
@@ -122,50 +125,51 @@ int random_integer_in_range(int a, int b) {
   return a + percent * (b - a) + 0.5;
 }
 
+std::vector<int> make_visit() {
+  int instruction_count = 0;
+  int r = 0;
+  std::vector<int> visit_address;
+  while (true) {
+    r = random_integer_in_range(1, _K(32) - 2);
+    visit_address.push_back(r);
+    instruction_count += 2;
+    visit_address.push_back(r + 1);
+    instruction_count += 2;
+    r = random_integer_in_range(0, r - 1);
+    visit_address.push_back(r);
+    instruction_count += 2;
+    visit_address.push_back(r + 1);
+    instruction_count += 2;
+    r = random_integer_in_range(r + 2, _K(32) - 2);
+    visit_address.push_back(r);
+    instruction_count += 2;
+    if (instruction_count >= 320)
+      break;
+    visit_address.push_back(r + 1);
+    instruction_count += 2;
+  }
+  return visit_address;
+}
+
 int main(void) {
   srand(static_cast<unsigned int>(time(NULL)));
   SchedulerFIFO s1;
   SchedulerLRU s2;
-  int instruction_count = 0;
-  int r = 0;
-  std::vector<int> visit_page_index_track;
-  while (true) {
-    r = random_integer_in_range(1, _K(32) - 2);
-    s1.visit(r);
-    s2.visit(r);
-    visit_page_index_track.push_back(address2page(r));
-    instruction_count += 2;
-    s1.visit(r + 1);
-    s2.visit(r + 1);
-    visit_page_index_track.push_back(address2page(r + 1));
-    instruction_count += 2;
-    r = random_integer_in_range(0, r - 1);
-    s1.visit(r);
-    s2.visit(r);
-    visit_page_index_track.push_back(address2page(r));
-    instruction_count += 2;
-    s1.visit(r + 1);
-    s2.visit(r + 1);
-    visit_page_index_track.push_back(address2page(r + 1));
-    instruction_count += 2;
-    r = random_integer_in_range(r + 2, _K(32) - 2);
-    s1.visit(r);
-    s2.visit(r);
-    visit_page_index_track.push_back(address2page(r));
-    instruction_count += 2;
-    if (instruction_count >= 320)
-      break;
-    s1.visit(r + 1);
-    s2.visit(r + 1);
-    visit_page_index_track.push_back(address2page(r + 1));
-    instruction_count += 2;
+  std::vector<int> visit_address = make_visit();
+  for (size_t i = 0; i < visit_address.size(); ++i) {
+    s1.visit(visit_address[i]);
+    s2.visit(visit_address[i]);
   }
-  SchedulerOptimal s3(visit_page_index_track);
-  for (auto address : visit_page_index_track) {
+  SchedulerOptimal s3(visit_address);
+  for (auto address : visit_address) {
     s3.visit(address);
   }
+  cout << "FIFO: ";
   s1.display();
+  cout << endl << "LRU: ";
   s2.display();
+  cout << endl << "Optimal: ";
   s3.display();
+  cout << endl;
   return 0;
 }
