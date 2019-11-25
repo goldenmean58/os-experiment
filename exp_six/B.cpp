@@ -1,23 +1,21 @@
-#include <iostream>
-#include <string.h>
-#include <sys/shm.h>
-#include <unistd.h>
-using std::cin;
-using std::cout;
-using std::endl;
+#include "main.h"
 
-int main(void) {
+int b(void) {
+  int sem1 = init_sem(IPC_CREAT);
+  int sem2 = init_sem(IPC_CREAT + 1);
   key_t key = 3523;
   int shm_id = shmget(key, 512, IPC_CREAT | 0666);
   if (-1 == shm_id) {
     cout << "Failed to get the shared memory" << endl;
     return -1;
   }
-  char buff[] = "Hello, Unix!";
+  char buff[] = "Hello Unix!";
+  v(sem1);
   char *addr = static_cast<char *>(shmat(shm_id, NULL, 0));
-  cout << addr << endl;
+  cout << "B read: " << addr << endl;
   strcpy(addr, buff);
-  cout << addr << endl;
+  cout << "B write: " << addr << endl;
+  p(sem2);
   shmdt(addr);
   return 0;
 }

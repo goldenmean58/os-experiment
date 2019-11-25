@@ -1,12 +1,8 @@
-#include <iostream>
-#include <string.h>
-#include <sys/shm.h>
-#include <unistd.h>
-using std::cin;
-using std::cout;
-using std::endl;
+#include "main.h"
 
-int main(void) {
+int a(void) {
+  int sem1 = init_sem(IPC_CREAT);
+  int sem2 = init_sem(IPC_CREAT + 1);
   key_t key = 3523;
   int shm_id = shmget(key, 512, IPC_CREAT | 0666);
   if (-1 == shm_id) {
@@ -20,13 +16,10 @@ int main(void) {
     return 0;
   }
   strcpy(addr, buff);
-  cout << buff << endl;
-  while (1) {
-    if (0 != strcmp(addr, buff)) {
-      cout << addr << endl;
-      shmdt(addr);
-      return 0;
-    }
-  }
+  cout << "A write: " << buff << endl;
+  p(sem1);
+  v(sem2);
+  cout << "A read: " << addr << endl;
+  shmdt(addr);
   return 0;
 }
